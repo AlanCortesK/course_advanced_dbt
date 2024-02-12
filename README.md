@@ -1,5 +1,25 @@
 # Week 2 Project
 
+## Task 1: Identify a few redundant tests that can be removed
+I added some new testing conventions so we can be reduce the redundant tests among the models.
+For staging models I removed all tests except the one for the primary key as the others columns
+are considered in source tests.
+
+## Task 2: Write a custom generic test to replace a redundant singular test
+For this task I created the `assert_valid_event_name` generict test.
+Also:
+1. An array type argument called `like_clause` was added so you could test several LIKE clauses using one test.
+2. In dbt_project.yml I added the paths tests/generic/docs and tests/generic/schemas too macros paths.
+    I did this so I could document the generic tests as macros using doc blocks and a yml file.
+    (Otherwise dbt was not identyfing the yml file, this also could be done adding the test to the macros folder instead of the tests folders)
+3. I applied this test to the source instead of the staging model.
+
+## Task 3: Write a unit test to confirm MRR is calculated correctly
+I didn't add a seed file for int_dates input, I think int_dates is really generic so it doesn't need a seed file for unit testing.
+Also I documented these seeds files.
+
+# Week 2 Project
+
 ## Task 1: Add SQLFluff to pre-commit hook
 sqlfluff pre-commit hook was added succesfully.
 
@@ -76,9 +96,19 @@ For this task I set all keywords to upper case, and a line lenght of 100, then I
 - Columns that should be unique must have a unique schema test.
 
 #### Models
+The following rules must be applied to all models:
 - The primary key column must have not_null and unique schema tests.
+- Columns that should be unique must have a unique schema test.
+
+The following rules can be ommited if:
+1. It is a staging model and the source is tested.
+2. The model contain simple transformations that don't change the definition of the column
+    and it is a model with only 1 dependency.
+3. The column is not transformed and came from the principal table in a left or right join.
+    Note: These tests must be applied for full outer joins.
+4. The model contains group bys, aggregations, and more complex transformations.
+Otherwise these tests are contemplated in upstream models:
 - All boolean columns must have an accepted_values schema test. The accepted values are true and false.
 - Columns that contain category values must have an accepted_values schema test.
 - Columns that should never be null must have a not_null schema test.
-- Columns that should be unique must have a unique schema test.
 - Where possible, use schema tests from the dbt_utils or dbt_expectations packages to perform extra verification.

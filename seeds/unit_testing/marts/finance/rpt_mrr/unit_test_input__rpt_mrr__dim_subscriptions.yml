@@ -1,43 +1,35 @@
-models:
-  - name: dim_subscriptions
-    description: '{{ doc("dim_subscriptions") }}'
+version: 2
+
+seeds:
+  - name: unit_test_input__rpt_mrr__dim_subscriptions
+    description: 'dim_subscriptions unit test input for rpt_mrr model'
+    config:
+      column_types:
+        subscription_id: string
+        user_id: string
+        starts_at: timestamp
+        ends_at: timestamp
+        plan_name: string
+        pricing: double
+        billing_period: string
     columns:
       - name: subscription_id
         description: '{{ doc("bingeflix__subscriptions__subscription_id") }}'
-        tests:
-          - not_null
-          - unique
-
-      - name: subscription_plan_id
-        description: '{{ doc("bingeflix__subscription_plans__subscription_plan_id") }}'
-        #Tested upstream
-        # Is part of the main model in a left join
 
       - name: user_id
         description: '{{ doc("bingeflix__users__user_id") }}'
-        #Tested upstream
-        # Is part of the main model in a left join
 
       - name: starts_at
         description: '{{ doc("bingeflix__subscriptions__starts_at") }}'
-        #Tested upstream
-        # Is part of the main model in a left join
 
       - name: ends_at
         description: '{{ doc("bingeflix__subscriptions__ends_at") }}'
 
-      # We keep the following tests as they are part of the left table
       - name: plan_name
         description: '{{ doc("bingeflix__subscription_plans__plan_name") }}'
-        tests:
-          - not_null
 
       - name: pricing
         description: '{{ doc("bingeflix__subscription_plans__pricing") }}'
-        tests:
-          - not_null
 
       - name: billing_period
         description: '{{ doc("bingeflix__subscription_plans__payment_period") }}'
-        tests:
-          - not_null
