@@ -1,4 +1,30 @@
-# Week 2 Project
+# Week 4 Project
+
+## Task 1: Create an incremental model
+For this task I did the following:
+- Create a macro called `unit_testing_select_table` in order for incremental model to be easier to implement.
+- I set the model `fct_events` to be incremental.
+
+## Task 2: Add dbt-snowflake-monitoring package to monitor Snowflake costs
+It seems that my costliest queries are the ones coming from Add dbt-snowflake-monitoring package haha.
+But if I exlude those ones I get:
+
+1. test.advanced_dbt.unique_mrr_with_unit_test_surrogate_key.7afb3ce33e
+2. test.course_advanced_dbt.unique_fct_mrr_surrogate_key.deed3bc59b
+3. test.advanced_dbt.not_null_mrr_with_unit_test_surrogate_key.5a4ec6dc02
+4. test.advanced_dbt.dbt_utils_equality_mrr_with_unit_test_ref_unit_test_expected_output_mrr_.798c45bfbf
+5. test.course_advanced_dbt.not_null_fct_mrr_surrogate_key.77b946eb8a
+
+Seems like testing is costly, so it is very important to remove redundant tests.
+
+The average daily cost for running the most expensive test is 0.0438.
+
+## Task 3: Refactor mrr.sql to proactively avoid a modelneck
+
+For this task I took the suggestion of creating an intermediate model based on `subscription_periods` CTE, so I created, documented and tested the model
+`int_subscription_periods`.
+
+# Week 3 Project
 
 ## Task 1: Identify a few redundant tests that can be removed
 I added some new testing conventions so we can be reduce the redundant tests among the models.
