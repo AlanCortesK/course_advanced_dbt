@@ -1,35 +1,11 @@
 {{ config(tags="p0") }}
 
--- Setting the unit test inputs
-{%
-    set import_dim_subscriptions = unit_testing_select_table(
-        ref('dim_subscriptions'),
-        ref('unit_test_input__rpt_mrr__dim_subscriptions')
-    )
-%}
+-- In order to unit test this model, please run including the following intermediate model
 
--- This model is created following the dbt MRR playbook:
--- https://www.getdbt.com/blog/modeling-subscription-revenue/
+WITH int_subscription_periods AS (
 
-WITH
+    SELECT * FROM {{ ref('int_subscription_periods') }}
 
--- Import CTEs
--- Get raw monthly subscriptions
-monthly_subscriptions AS (
-    SELECT
-        subscription_id,
-        user_id,
-        starts_at,
-        ends_at,
-        plan_name,
-        pricing,
-        {{ trunc_to_month( "starts_at", "start_month") }},
-        {{ trunc_to_month( "ends_at", "end_month") }}
-
-    FROM
-        {{ import_dim_subscriptions }}
-    WHERE
-        billing_period = 'monthly'
 ),
 
 -- Use the dates spine to generate a list of months
@@ -42,35 +18,6 @@ months AS (
         day_of_month = 1
 ),
 
--- Logic CTEs
--- Create subscription period start_month and end_month ranges
-subscription_periods AS (
-    SELECT
-        subscription_id,
-        user_id,
-        plan_name,
-        pricing AS monthly_amount,
-        starts_at,
-        ends_at,
-        start_month,
-
-        -- For users that cancel in the first month, set their end_month to next month
-        -- because the subscription remains active until the end of the first month
-
-        -- For users who haven't ended their subscription yet (end_month is NULL) set the end_month
-        -- to one month from the current date (these rows will be removed from the final CTE)
-
-        CASE
-            WHEN start_month = end_month THEN DATEADD('month', 1, end_month)
-            WHEN
-                end_month IS NULL
-                THEN DATE(DATEADD('month', 1, {{ trunc_to_month("current_date") }} ))
-            ELSE end_month
-        END AS end_month
-    FROM
-        monthly_subscriptions
-),
-
 -- Determine when given subscription plan's first and most recent months
 subscribers AS (
     SELECT
@@ -79,7 +26,7 @@ subscribers AS (
         MIN(start_month) AS first_start_month,
         MAX(end_month) AS last_end_month
     FROM
-        subscription_periods
+        int_subscription_periods
     GROUP BY
         1, 2
 ),
@@ -108,7 +55,7 @@ mrr_base AS (
         COALESCE(subscription_periods.monthly_amount, 0.0) AS mrr
     FROM
         subscriber_months
-        LEFT JOIN subscription_periods
+        LEFT JOIN int_subscription_periods AS subscription_periods
             ON subscriber_months.user_id = subscription_periods.user_id
                 AND subscriber_months.subscription_id = subscription_periods.subscription_id
                 -- The month is on or after the subscription start date...
@@ -219,7 +166,7 @@ final AS (
 
     FROM
         mrr_with_changes
-        LEFT JOIN subscription_periods
+        LEFT JOIN int_subscription_periods AS subscription_periods
             ON mrr_with_changes.user_id = subscription_periods.user_id
                 AND mrr_with_changes.subscription_id = subscription_periods.subscription_id
     WHERE
@@ -227,9 +174,7 @@ final AS (
 )
 
 SELECT
-
-
-        {{ dbt_utils.generate_surrogate_key(['date_month', 'subscription_id', 'change_category']) }}
+    {{ dbt_utils.generate_surrogate_key(['date_month', 'subscription_id', 'change_category']) }}
         AS surrogate_key,
     *
 FROM final
